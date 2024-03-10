@@ -2,7 +2,8 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import routesProducto from '../routes/producto';
 import db from '../db/connection';
-
+import routesSuppliers from '../routes/suppliers';
+import routesCategories from '../routes/categories';
 class Server {
     private app: Application;
     private port: string;
@@ -14,7 +15,7 @@ class Server {
         this.midlewares();
         this.routes();
         this.dbConnect();
-        
+
     }
 
     listen() {
@@ -30,6 +31,8 @@ class Server {
             })
         })
         this.app.use('/api/productos', routesProducto)
+        this.app.use('/api/suppliers', routesSuppliers)
+        this.app.use('/api/categories', routesCategories)
     }
 
     midlewares() {
@@ -39,7 +42,7 @@ class Server {
 
         // Cors
         this.app.use(cors({
-            origin: ['http://localhost:4200/'],  // Reemplaza con la URL de tu frontend
+            origin: '*',  // Reemplaza con la URL de tu frontend
             methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
             credentials: true, 
         }));

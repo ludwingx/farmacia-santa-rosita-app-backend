@@ -3,6 +3,10 @@ import db from '../db/connection';
 
 
 const products = db.define('product', {
+    image:{
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
     name: {
         type: DataTypes.STRING,
         allowNull: false,
