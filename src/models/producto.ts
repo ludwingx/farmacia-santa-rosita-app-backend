@@ -40,8 +40,8 @@ const products = db.define('product', {
         type: DataTypes.STRING(20),
         allowNull: true,
     },
-    storage_location: {
-        type: DataTypes.STRING(50),
+    storage_location_id: {
+        type: DataTypes.INTEGER,
         allowNull: true,
     },
     nutritional_information: {

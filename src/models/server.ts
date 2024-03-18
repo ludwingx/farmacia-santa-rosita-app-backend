@@ -4,6 +4,9 @@ import routesProducto from '../routes/producto';
 import db from '../db/connection';
 import routesSuppliers from '../routes/suppliers';
 import routesCategories from '../routes/categories';
+import routeStorageLocation from '../routes/storage_location';
+import routesUsers from '../routes/users';
+import routeRoles from '../routes/roles';
 class Server {
     private app: Application;
     private port: string;
@@ -33,6 +36,10 @@ class Server {
         this.app.use('/api/productos', routesProducto)
         this.app.use('/api/suppliers', routesSuppliers)
         this.app.use('/api/categories', routesCategories)
+        this.app.use('/api/storage_location', routeStorageLocation)
+
+        this.app.use('/api/users', routesUsers)
+        this.app.use('/api/roles', routeRoles)
     }
 
     midlewares() {
