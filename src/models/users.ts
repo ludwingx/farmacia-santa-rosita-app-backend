@@ -1,37 +1,65 @@
-import { DataTypes } from 'sequelize';
+// users.model.ts
+import { DataTypes, Model } from 'sequelize';
 import db from '../db/connection';
-import Roles from './roles'; // Importa el modelo de roles
+import Roles from './roles';
+import Status from './status';
 
-const users = db.define('users', {
+interface UserInstance extends Model {
+    id: number;
+    name: string;
+    email: string;
+    image: string;
+    ci: number;
+    username: string;
+    password: string;
+    role_id: number;
+    status_id: number;
+}
+
+const Users = db.define<UserInstance>('users', {
     name: {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    image:{
-        type: DataTypes.TEXT,
+    email: {
+        type: DataTypes.STRING,
         allowNull: false,
-    }, 
-    ci:{
+    },
+    image: {
+        type: DataTypes.STRING
+    },
+    ci: {
         type: DataTypes.INTEGER,
         allowNull: false,
-    }, 
-    username:{
+    },
+    username: {
         type: DataTypes.STRING(30),
         allowNull: false,
-    }, 
-    password:{
+    },
+    password: {
         type: DataTypes.STRING(70),
         allowNull: false,
-    }, 
-    role_id:{
+    },
+    role_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
+    status_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
     }
 }, {
     timestamps: false,
 });
-users.belongsTo(Roles, {
-    foreignKey: 'role_id', // La clave foránea en la tabla de usuarios
-    as: 'role' // Alias para la relación
+
+Users.belongsTo(Roles, {
+    foreignKey: 'role_id',
+    as: 'role'
 });
-export default users;
+
+Users.belongsTo(Status, {
+    foreignKey: 'status_id',
+    as: 'status'
+});
+
+export default Users;

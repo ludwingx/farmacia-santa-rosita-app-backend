@@ -1,19 +1,19 @@
 import { DataTypes, Model } from 'sequelize';
 import db from '../db/connection';
 
-interface RoleAttributes {
-  // Define las propiedades de tu modelo Role
+interface StatusAttributes {
+  // Define las propiedades de tu modelo Status
   id: number;
   name: string;
 }
 
-class Roles extends Model<RoleAttributes> implements RoleAttributes {
+class Status extends Model<StatusAttributes> implements StatusAttributes {
   public id!: number;
   public name!: string;
 }
 
-// Define tu modelo Roles
-Roles.init(
+// Define tu modelo Status
+Status.init(
   {
     id: {
       type: DataTypes.INTEGER,
@@ -27,9 +27,9 @@ Roles.init(
   },
   {
     sequelize: db,
-    modelName: 'Roles',
+    modelName: 'Status',
     timestamps: false,
   }
 );
 
-export default Roles;
+export default Status;

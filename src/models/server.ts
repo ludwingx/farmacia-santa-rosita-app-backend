@@ -7,68 +7,66 @@ import routesCategories from '../routes/categories';
 import routeStorageLocation from '../routes/storage_location';
 import routesUsers from '../routes/users';
 import routeRoles from '../routes/roles';
+import routeStatus from '../routes/status';
+import path from 'path';
+import multer from '../libs/multer';
+
 class Server {
     private app: Application;
-    private port: string;
+    private port: string | number;
 
     constructor() {
         this.app = express();
-        this.port = process.env.PORT || '3001'; //
+        this.port = process.env.PORT || 3001; // Usando el puerto 3001 si no está definido en las variables de entorno
         this.listen();
-        this.midlewares();
+        this.middlewares();
         this.routes();
         this.dbConnect();
-
     }
-
-    listen() {
+    
+    private listen() {
         this.app.listen(this.port, () => {
-            console.log(`Aplicacion corriendo en el puerto ${this.port}`)
-        })
+            console.log(`Aplicación corriendo en el puerto ${this.port}`);
+        });
     }
 
-    routes() {
+    private routes() {
         this.app.get('/', (req: Request, res: Response) => {
-            res.json({
-                msg: 'API Working'
-            })
-        })
-        this.app.use('/api/productos', routesProducto)
-        this.app.use('/api/suppliers', routesSuppliers)
-        this.app.use('/api/categories', routesCategories)
-        this.app.use('/api/storage_location', routeStorageLocation)
+            res.json({ msg: 'API Working' });
+        });
 
-        this.app.use('/api/users', routesUsers)
-        this.app.use('/api/roles', routeRoles)
+        this.app.use('/api/productos', routesProducto);
+        this.app.use('/api/suppliers', routesSuppliers);
+        this.app.use('/api/categories', routesCategories);
+        this.app.use('/api/storage_location', routeStorageLocation);
+
+        this.app.use('/api/users', routesUsers);
+        this.app.use('/images', express.static('images'));
+
+        this.app.use('/api/roles', routeRoles);
+        this.app.use('/api/statuses', routeStatus);
     }
 
-    midlewares() {
-
+    private middlewares() {
         // Parseamos el body
         this.app.use(express.json());
 
-        // Cors
+        // CORS
         this.app.use(cors({
-            origin: '*',  // Reemplaza con la URL de tu frontend
+            origin: '*',  // Reemplaza con la URL de tu frontend en producción
             methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-            credentials: true, 
+            credentials: true,
         }));
     }
 
-    async dbConnect() {
-
+    private async dbConnect() {
         try {
             await db.authenticate();
-            console.log('Base de datos conectada')
+            console.log('Base de datos conectada');
         } catch (error) {
-            console.log(error);
-            console.log('Error al conectarse a la base de datos')
+            console.error('Error al conectarse a la base de datos:', error);
         }
-
-       
     }
-
-
 }
 
 export default Server;

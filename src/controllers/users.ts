@@ -1,10 +1,13 @@
 import { Request, Response } from 'express';
-import users from '../models/users';
+import Users from '../models/users';
 import Roles from '../models/roles';
+import Status from '../models/status';
+
 export const getUsers = async (req: Request, res: Response) => {
    try{
-    const listUser = await users.findAll({
-        include: [{ model: Roles, as: 'role' }] 
+    const listUser = await Users.findAll({
+        include: [{ model: Roles, as: 'role' }, {model: Status, as :'status'}]
+
     });
     res.json(listUser)
    }
@@ -18,8 +21,8 @@ export const getUsers = async (req: Request, res: Response) => {
 export const getUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        const user = await users.findByPk(id, {
-            include: Roles // Incluye la información del rol asociado al usuario
+        const user = await Users.findByPk(id, {
+            include: [{ model: Roles, as: 'role' }, {model: Status, as :'status'}]
         });
 
         if (user) {
@@ -37,28 +40,34 @@ export const getUser = async (req: Request, res: Response) => {
     }
 }
 
-export const deleteUser = async (req: Request, res: Response) => {
+export const updateUserStatus = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const user = await users.findByPk(id);
+    const { status_id } = req.body; // Suponiendo que 'status_id' es el campo en el cuerpo de la solicitud que representa el nuevo estado
 
-    if (!user) {
-        res.status(404).json({
-            msg: `No existe un users con el id ${id}`
-        })
-    } else {
-        await user.destroy();
-        res.json({
-            msg: 'El users fue eliminado con exito!'
-        })
-    }
+    try {
+        const user = await Users.findByPk(id);
 
-}
+        if (user) {
+            const updatedUser = await user.update({ status_id });
+            res.json(updatedUser);
+        } else {
+            res.status(404).json({
+                msg: `No existe un usuario con el id ${id}`
+            });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            msg: 'Ocurrio un error al actualizar el usuario'
+        });
+    }   
+};
 
 export const postUser = async (req: Request, res: Response) => {
     const { body } = req;
 
     try {
-        await users.create(body);
+        await Users.create(body);
 
         res.json({
             msg: `El users fue agregado con exito!`
@@ -77,7 +86,7 @@ export const updateUser = async (req: Request, res: Response) => {
 
     try {
 
-        const user = await users.findByPk(id);
+        const user = await Users.findByPk(id);
 
     if(user) {
         await user.update(body);
@@ -100,5 +109,35 @@ export const updateUser = async (req: Request, res: Response) => {
 
     
 }
+
+export const updateUserImage = async (req: any, res: Response) => { // Cambia 'req: any' para aceptar 'req.file'
+    const { id } = req.params;
+    const { image } = req.file; // Utiliza 'req.file' en lugar de 'req.files'
+  
+    try {
+      const user = await Users.findByPk(id);
+  
+      if (user) {
+        // Guardar la imagen en el directorio de imágenes del servidor
+        const imagePath = image.path;
+        // Actualizar la ruta de la imagen en la base de datos
+        user.update({ image: imagePath }).then(() => {
+          res.json({ msg: 'Imagen actualizada exitosamente' });
+        }).catch((err: any) => {
+          console.error(err);
+          return res.status(500).json({ msg: 'Error al actualizar la ruta de la imagen en la base de datos' });
+        });
+      } else {
+        res.status(404).json({
+          msg: `No existe un usuario con el id ${id}`
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        msg: 'Ocurrió un error al actualizar la imagen del usuario'
+      });
+    }
+  };
 
     
