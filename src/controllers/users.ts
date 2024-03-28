@@ -1,48 +1,89 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import Users from '../models/users';
 import Roles from '../models/roles';
 import Status from '../models/status';
+import { v4 as uuidv4 } from 'uuid';
+import path from 'path';
+import fs from 'fs';
 
 export const getUsers = async (req: Request, res: Response) => {
-   try{
-    const listUser = await Users.findAll({
-        include: [{ model: Roles, as: 'role' }, {model: Status, as :'status'}]
-
-    });
-    res.json(listUser)
-   }
-    catch (error) {
-        console.error(error);
-        res.status(500).json({
-            msg: 'Ocurrió un error al obtener los usuarios'
+    try {
+        const listUsers = await Users.findAll({
+            include: [{ model: Roles, as: 'role' }, { model: Status, as: 'status' }]
         });
+        res.json(listUsers);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al obtener los usuarios' });
     }
-}
+};
+
+// Obtener un usuario por su ID
 export const getUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
         const user = await Users.findByPk(id, {
-            include: [{ model: Roles, as: 'role' }, {model: Status, as :'status'}]
+            include: [{ model: Roles, as: 'role' }, { model: Status, as: 'status' }]
         });
 
         if (user) {
             res.json(user);
         } else {
-            res.status(404).json({
-                msg: `No existe un usuario con el id ${id}`
-            });
+            res.status(404).json({ message: `Usuario con id ${id} no encontrado` });
         }
     } catch (error) {
         console.error(error);
-        res.status(500).json({
-            msg: 'Ocurrió un error al obtener el usuario'
-        });
+        res.status(500).json({ message: 'Error al obtener el usuario' });
     }
-}
+};
 
+// Crear un nuevo usuario
+export const createUser = async (req: Request, res: Response) => {
+    const { body } = req;
+    try {
+        const newUser = await Users.create(body);
+        res.status(201).json(newUser);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al crear usuario' });
+    }
+};
+
+// Actualizar un usuario por su ID
+export const updateUser = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { body } = req;
+    try {
+        const user = await Users.findByPk(id);
+        if (!user) {
+            return res.status(404).json({ message: `Usuario con id ${id} no encontrado` });
+        }
+        await user.update(body);
+        res.json({ message: 'Usuario actualizado correctamente' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al actualizar usuario' });
+    }
+};
+
+// Eliminar un usuario por su ID
+export const deleteUser = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const user = await Users.findByPk(id);
+        if (!user) {
+            return res.status(404).json({ message: `Usuario con id ${id} no encontrado` });
+        }
+        await user.destroy();
+        res.json({ message: 'Usuario eliminado correctamente' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al eliminar usuario' });
+    }
+};
 export const updateUserStatus = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { status_id } = req.body; // Suponiendo que 'status_id' es el campo en el cuerpo de la solicitud que representa el nuevo estado
+    const { status_id } = req.body;
 
     try {
         const user = await Users.findByPk(id);
@@ -58,86 +99,69 @@ export const updateUserStatus = async (req: Request, res: Response) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({
-            msg: 'Ocurrio un error al actualizar el usuario'
+            msg: 'Ocurrió un error al actualizar el usuario'
         });
     }   
-};
-
-export const postUser = async (req: Request, res: Response) => {
-    const { body } = req;
-
-    try {
-        await Users.create(body);
-
-        res.json({
-            msg: `El users fue agregado con exito!`
-        })
-    } catch (error) {
-        console.log(error);
-        res.json({
-            msg: `Upps ocurrio un error, comuniquese con soporte`
-        })
-    }
 }
-
-export const updateUser = async (req: Request, res: Response) => {
-    const { body } = req;
+// Subir imagen de perfil de usuario
+export const uploadProfileImage = async (req: Request, res: Response) => {
     const { id } = req.params;
+    const file = req.file; // Acceder al objeto de archivo
 
     try {
+        if (!file) {
+            return res.status(400).json({ message: 'Debe proporcionar una imagen de perfil' });
+        }
+
+        // Verificar que el objeto de archivo tenga la propiedad 'path'
+        if (!file.path) {
+            return res.status(500).json({ message: 'Error al obtener la ruta del archivo' });
+        }
 
         const user = await Users.findByPk(id);
+        if (!user) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
 
-    if(user) {
-        await user.update(body);
-        res.json({
-            msg: 'El users fue actualziado con exito'
-        })
+        // Eliminar imagen anterior si existe
+        if (user.image) {
+            const imagePath = path.join(__dirname, '../uploads/', user.image);
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath);
+            }
+        }
 
-    } else {
-        res.status(404).json({
-            msg: `No existe un users con el id ${id}`
-        })
-    }
-        
+        user.image = file.path; // Acceder a la propiedad 'path' del objeto de archivo
+        await user.save();
+
+        res.json({ message: 'Imagen de perfil actualizada correctamente' });
     } catch (error) {
-        console.log(error);
-        res.json({
-            msg: `Upps ocurrio un error, comuniquese con soporte`
-        })
+        console.error(error);
+        res.status(500).json({ message: 'Error al subir la imagen de perfil' });
     }
-
-    
-}
-
-export const updateUserImage = async (req: any, res: Response) => { // Cambia 'req: any' para aceptar 'req.file'
+};
+// Obtener imagen de perfil de usuario
+export const getProfileImage = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { image } = req.file; // Utiliza 'req.file' en lugar de 'req.files'
-  
     try {
-      const user = await Users.findByPk(id);
-  
-      if (user) {
-        // Guardar la imagen en el directorio de imágenes del servidor
-        const imagePath = image.path;
-        // Actualizar la ruta de la imagen en la base de datos
-        user.update({ image: imagePath }).then(() => {
-          res.json({ msg: 'Imagen actualizada exitosamente' });
-        }).catch((err: any) => {
-          console.error(err);
-          return res.status(500).json({ msg: 'Error al actualizar la ruta de la imagen en la base de datos' });
-        });
-      } else {
-        res.status(404).json({
-          msg: `No existe un usuario con el id ${id}`
-        });
-      }
+        const user = await Users.findByPk(id);
+        if (!user || !user.image) {
+            return res.status(404).json({ message: 'Imagen de perfil no encontrada' });
+        }
+        res.sendFile(path.join(__dirname, '../uploads/', user.image));
     } catch (error) {
-      console.error(error);
-      res.status(500).json({
-        msg: 'Ocurrió un error al actualizar la imagen del usuario'
-      });
+        console.error(error);
+        res.status(500).json({ message: 'Error al obtener la imagen de perfil' });
     }
-  };
+};
 
-    
+export default {
+    getUsers,
+    getUser,
+    createUser,
+    updateUser,
+    deleteUser,
+    updateUserStatus,
+    uploadProfileImage,
+    getProfileImage
+};

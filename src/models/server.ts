@@ -41,7 +41,7 @@ class Server {
         this.app.use('/api/storage_location', routeStorageLocation);
 
         this.app.use('/api/users', routesUsers);
-        this.app.use('/images', express.static('images'));
+        this.app.use('/uploads/profiles', express.static('uploads/profiles'));
 
         this.app.use('/api/roles', routeRoles);
         this.app.use('/api/statuses', routeStatus);

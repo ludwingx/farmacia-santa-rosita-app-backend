@@ -26,7 +26,8 @@ const Users = db.define<UserInstance>('users', {
         allowNull: false,
     },
     image: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
+        allowNull: true,
     },
     ci: {
         type: DataTypes.INTEGER,
