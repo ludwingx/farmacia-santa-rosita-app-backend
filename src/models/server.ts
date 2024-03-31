@@ -8,6 +8,8 @@ import routeStorageLocation from '../routes/storage_location';
 import routesUsers from '../routes/users';
 import routeRoles from '../routes/roles';
 import routeStatus from '../routes/status';
+
+import routesAuth from '../routes/auth';
 import path from 'path';
 import multer from '../libs/multer';
 
@@ -41,10 +43,13 @@ class Server {
         this.app.use('/api/storage_location', routeStorageLocation);
 
         this.app.use('/api/users', routesUsers);
+        this.app.use('/api/auth', routesAuth);
         this.app.use('/uploads/profiles', express.static('uploads/profiles'));
 
         this.app.use('/api/roles', routeRoles);
         this.app.use('/api/statuses', routeStatus);
+
+        
     }
 
     private middlewares() {
