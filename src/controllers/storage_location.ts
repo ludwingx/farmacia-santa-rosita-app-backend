@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import storage_locations from '../models/storage_location';
+import storage_locations from '../models/lots';
 
 export const getStorageLocations = async (req: Request, res: Response) => {
     const listStorageLocationo = await storage_locations.findAll()

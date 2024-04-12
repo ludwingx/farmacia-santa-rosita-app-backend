@@ -20,7 +20,11 @@ const products = db.define('product', {
         type: DataTypes.TEXT,
         allowNull: true,
     },
-    price: {
+    purchase_price: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+    },
+    selling_price: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: true,
     },
@@ -28,19 +32,7 @@ const products = db.define('product', {
         type: DataTypes.INTEGER,
         allowNull: true,
     },
-    expiration_date: {
-        type: DataTypes.DATE,
-        allowNull: true,
-    },
     supplier_id: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-    },
-    lot_number: {
-        type: DataTypes.STRING(20),
-        allowNull: true,
-    },
-    storage_location_id: {
         type: DataTypes.INTEGER,
         allowNull: true,
     },
@@ -48,15 +40,15 @@ const products = db.define('product', {
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    storage_location_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
     notes: {
         type: DataTypes.TEXT,
         allowNull: true,
     },
     category_id: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-    },
-    current_stock: {
         type: DataTypes.INTEGER,
         allowNull: true,
     },
@@ -71,6 +63,14 @@ const products = db.define('product', {
         defaultValue: DataTypes.NOW,
 
     },
+    create_by_user_id:{
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    last_update_by_user_id:{
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    }
 }, {
     timestamps: false,
 });
