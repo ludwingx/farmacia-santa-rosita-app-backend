@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import {getUsers, getUser, updateUser, createUser, updateUserStatus,uploadProfileImage} from '../controllers/users';
+import {getUsers, getUser, updateUser, createUser, updateUserStatus, uploadProfileImage} from '../controllers/users';
 
 import usersController from '../controllers/users';
 

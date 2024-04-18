@@ -10,8 +10,7 @@ import routeRoles from '../routes/roles';
 import routeStatus from '../routes/status';
 
 import routesAuth from '../routes/auth';
-import path from 'path';
-import multer from '../libs/multer';
+import routesLots from '../routes/lots';
 
 class Server {
     private app: Application;
@@ -41,11 +40,13 @@ class Server {
         this.app.use('/api/suppliers', routesSuppliers);
         this.app.use('/api/categories', routesCategories);
         this.app.use('/api/storage_location', routeStorageLocation);
-
+        this.app.use('/api/lots', routesLots)
         this.app.use('/api/users', routesUsers);
         this.app.use('/api/auth', routesAuth);
-        this.app.use('/uploads/profiles', express.static('uploads/profiles'));
 
+        this.app.use('/uploads/profiles', express.static('uploads/profiles'));
+        this.app.use('uploads/products', express.static('uploads/products'));
+        
         this.app.use('/api/roles', routeRoles);
         this.app.use('/api/statuses', routeStatus);
 
