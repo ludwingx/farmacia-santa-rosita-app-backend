@@ -1,15 +1,16 @@
-import { NextFunction, Request, Response } from 'express';
-import Users from '../models/users';
-import Roles from '../models/roles';
-import Status from '../models/status';
-import { v4 as uuidv4 } from 'uuid';
+import { Request, Response } from 'express';
+import prisma from '../db/prisma';
 import path from 'path';
 import fs from 'fs';
 
 export const getUsers = async (req: Request, res: Response) => {
     try {
-        const listUsers = await Users.findAll({
-            include: [{ model: Roles, as: 'role' }, { model: Status, as: 'status' }]
+        const listUsers = await prisma.user.findMany({
+            include: {
+                role: true,
+                status: true,
+            },
+            orderBy: { id: 'asc' },
         });
         res.json(listUsers);
     } catch (error) {
@@ -18,12 +19,15 @@ export const getUsers = async (req: Request, res: Response) => {
     }
 };
 
-// Obtener un usuario por su ID
 export const getUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        const user = await Users.findByPk(id, {
-            include: [{ model: Roles, as: 'role' }, { model: Status, as: 'status' }]
+        const user = await prisma.user.findUnique({
+            where: { id: Number(id) },
+            include: {
+                role: true,
+                status: true,
+            },
         });
 
         if (user) {
@@ -37,11 +41,21 @@ export const getUser = async (req: Request, res: Response) => {
     }
 };
 
-// Crear un nuevo usuario
 export const createUser = async (req: Request, res: Response) => {
     const { body } = req;
     try {
-        const newUser = await Users.create(body);
+        const newUser = await prisma.user.create({
+            data: {
+                name: body.name,
+                email: body.email,
+                image: body.image || null,
+                ci: Number(body.ci) || 0,
+                username: body.username,
+                password: body.password,
+                role_id: Number(body.role_id) || 1,
+                status_id: Number(body.status_id) || 1,
+            },
+        });
         res.status(201).json(newUser);
     } catch (error) {
         console.error(error);
@@ -49,16 +63,24 @@ export const createUser = async (req: Request, res: Response) => {
     }
 };
 
-// Actualizar un usuario por su ID
 export const updateUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { body } = req;
     try {
-        const user = await Users.findByPk(id);
-        if (!user) {
-            return res.status(404).json({ message: `Usuario con id ${id} no encontrado` });
-        }
-        await user.update(body);
+        const dataToUpdate: any = {};
+        if (body.name) dataToUpdate.name = body.name;
+        if (body.email) dataToUpdate.email = body.email;
+        if (body.image !== undefined) dataToUpdate.image = body.image;
+        if (body.ci) dataToUpdate.ci = Number(body.ci);
+        if (body.username) dataToUpdate.username = body.username;
+        if (body.password) dataToUpdate.password = body.password;
+        if (body.role_id) dataToUpdate.role_id = Number(body.role_id);
+        if (body.status_id) dataToUpdate.status_id = Number(body.status_id);
+
+        await prisma.user.update({
+            where: { id: Number(id) },
+            data: dataToUpdate,
+        });
         res.json({ message: 'Usuario actualizado correctamente' });
     } catch (error) {
         console.error(error);
@@ -66,64 +88,53 @@ export const updateUser = async (req: Request, res: Response) => {
     }
 };
 
-// Eliminar un usuario por su ID
 export const deleteUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        const user = await Users.findByPk(id);
-        if (!user) {
-            return res.status(404).json({ message: `Usuario con id ${id} no encontrado` });
-        }
-        await user.destroy();
+        await prisma.user.delete({
+            where: { id: Number(id) },
+        });
         res.json({ message: 'Usuario eliminado correctamente' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error al eliminar usuario' });
     }
 };
+
 export const updateUserStatus = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { status_id } = req.body;
 
     try {
-        const user = await Users.findByPk(id);
-
-        if (user) {
-            const updatedUser = await user.update({ status_id });
-            res.json(updatedUser);
-        } else {
-            res.status(404).json({
-                msg: `No existe un usuario con el id ${id}`
-            });
-        }
+        const updatedUser = await prisma.user.update({
+            where: { id: Number(id) },
+            data: { status_id: Number(status_id) },
+        });
+        res.json(updatedUser);
     } catch (error) {
         console.error(error);
         res.status(500).json({
             msg: 'Ocurrió un error al actualizar el usuario'
         });
-    }   
-}
-// Subir imagen de perfil de usuario
+    }
+};
+
 export const uploadProfileImage = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const file = req.file; // Acceder al objeto de archivo
+    const file = req.file;
 
     try {
-        if (!file) {
+        if (!file || !file.path) {
             return res.status(400).json({ message: 'Debe proporcionar una imagen de perfil' });
         }
 
-        // Verificar que el objeto de archivo tenga la propiedad 'path'
-        if (!file.path) {
-            return res.status(500).json({ message: 'Error al obtener la ruta del archivo' });
-        }
-
-        const user = await Users.findByPk(id);
+        const user = await prisma.user.findUnique({
+            where: { id: Number(id) }
+        });
         if (!user) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
 
-        // Eliminar imagen anterior si existe
         if (user.image) {
             const imagePath = path.join(__dirname, '../uploads/', user.image);
             if (fs.existsSync(imagePath)) {
@@ -131,8 +142,10 @@ export const uploadProfileImage = async (req: Request, res: Response) => {
             }
         }
 
-        user.image = file.path; // Acceder a la propiedad 'path' del objeto de archivo
-        await user.save();
+        await prisma.user.update({
+            where: { id: Number(id) },
+            data: { image: file.path }
+        });
 
         res.json({ message: 'Imagen de perfil actualizada correctamente' });
     } catch (error) {
@@ -140,11 +153,13 @@ export const uploadProfileImage = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error al subir la imagen de perfil' });
     }
 };
-// Obtener imagen de perfil de usuario
+
 export const getProfileImage = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        const user = await Users.findByPk(id);
+        const user = await prisma.user.findUnique({
+            where: { id: Number(id) }
+        });
         if (!user || !user.image) {
             return res.status(404).json({ message: 'Imagen de perfil no encontrada' });
         }

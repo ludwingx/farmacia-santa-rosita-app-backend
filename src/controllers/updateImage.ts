@@ -1,15 +1,18 @@
 // controllers/image.ts
 
 import { Request, Response } from 'express';
-import Users from '../models/users';
+import prisma from '../db/prisma';
 
 // Controlador para obtener la foto de un usuario por su ID
 export const getPhoto = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const user = await Users.findByPk(id);
+    const user = await prisma.user.findUnique({
+      where: { id: Number(id) },
+      select: { image: true }
+    });
     if (user) {
-      res.json({ image: user.get('image') }); // Accedemos a la propiedad 'image' del usuario usando el método get()
+      res.json({ image: user.image });
     } else {
       res.status(404).json({ msg: `No existe un usuario con el id ${id}` });
     }
@@ -17,7 +20,7 @@ export const getPhoto = async (req: Request, res: Response) => {
     console.error(error);
     res.status(500).json({ msg: 'Ocurrió un error al obtener la imagen del usuario' });
   }
-}
+};
 
 // Controlador para actualizar la foto de un usuario por su ID
 export const updatePhoto = async (req: Request, res: Response) => {
@@ -29,13 +32,16 @@ export const updatePhoto = async (req: Request, res: Response) => {
       return res.status(400).json({ msg: 'No se ha proporcionado ninguna imagen' });
     }
 
-    const user = await Users.findByPk(id);
+    const user = await prisma.user.findUnique({
+      where: { id: Number(id) }
+    });
 
     if (user) {
-      // Guardar la imagen en el directorio de imágenes del servidor
       const imagePath = imageFile.path;
-      // Actualizar la ruta de la imagen en la base de datos
-      await user.update({ image: imagePath });
+      await prisma.user.update({
+        where: { id: Number(id) },
+        data: { image: imagePath }
+      });
       res.json({ msg: 'Imagen actualizada exitosamente' });
     } else {
       res.status(404).json({ msg: `No existe un usuario con el id ${id}` });
@@ -44,4 +50,4 @@ export const updatePhoto = async (req: Request, res: Response) => {
     console.error(error);
     res.status(500).json({ msg: 'Ocurrió un error al actualizar la imagen del usuario' });
   }
-}
+};

@@ -1,7 +1,7 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import routesProducto from '../routes/producto';
-import db from '../db/connection';
+import prisma from '../db/prisma';
 import routesSuppliers from '../routes/suppliers';
 import routesCategories from '../routes/categories';
 import routeStorageLocation from '../routes/storage_location';
@@ -11,6 +11,9 @@ import routeStatus from '../routes/status';
 
 import routesAuth from '../routes/auth';
 import routesLots from '../routes/lots';
+import routesSales from '../routes/sales';
+import routesPurchases from '../routes/purchases';
+import routesReports from '../routes/reports';
 
 class Server {
     private app: Application;
@@ -43,9 +46,12 @@ class Server {
         this.app.use('/api/lots', routesLots)
         this.app.use('/api/users', routesUsers);
         this.app.use('/api/auth', routesAuth);
+        this.app.use('/api/sales', routesSales);
+        this.app.use('/api/purchases', routesPurchases);
+        this.app.use('/api/reports', routesReports);
 
         this.app.use('/uploads/profiles', express.static('uploads/profiles'));
-        this.app.use('uploads/products', express.static('uploads/products'));
+        this.app.use('/uploads/products', express.static('uploads/products'));
         
         this.app.use('/api/roles', routeRoles);
         this.app.use('/api/statuses', routeStatus);
@@ -67,10 +73,10 @@ class Server {
 
     private async dbConnect() {
         try {
-            await db.authenticate();
-            console.log('Base de datos conectada');
+            await prisma.$connect();
+            console.log('Base de datos conectada exitosamente con Prisma ORM');
         } catch (error) {
-            console.error('Error al conectarse a la base de datos:', error);
+            console.error('Error al conectarse a la base de datos con Prisma:', error);
         }
     }
 }

@@ -1,66 +1,61 @@
 import { Request, Response } from 'express';
-import roles from '../models/roles';
+import prisma from '../db/prisma';
 
 export const getRoles = async (req: Request, res: Response) => {
-    const listRoles = await roles.findAll()
-    res.json(listRoles)
-}
+    try {
+        const listRoles = await prisma.role.findMany({
+            orderBy: { id: 'asc' },
+        });
+        res.json(listRoles);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Error al obtener roles' });
+    }
+};
+
 export const getRole = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const role = await roles.findByPk(id);
-    if (role) {
-        res.json(role)
-    } else {
-        res.status(404).json({
-            msg: `No existe un roles con el id ${id}`
-        })
+    try {
+        const role = await prisma.role.findUnique({
+            where: { id: Number(id) },
+        });
+        if (role) {
+            res.json(role);
+        } else {
+            res.status(404).json({ msg: `No existe un rol con el id ${id}` });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Error al obtener el rol' });
     }
-}
+};
+
 export const postRole = async (req: Request, res: Response) => {
     const { body } = req;
-
     try {
-        await roles.create(body);
-
-        res.json({
-            msg: `El roles fue agregado con exito!`
-        })
+        const newRole = await prisma.role.create({
+            data: { name: body.name },
+        });
+        res.status(201).json({ msg: 'El rol fue agregado con éxito!', role: newRole });
     } catch (error) {
-        console.log(error);
-        res.json({
-            msg: `Upps ocurrio un error, comuniquese con soporte`
-        })
+        console.error(error);
+        res.status(500).json({ msg: 'Upps ocurrió un error al crear el rol' });
     }
-}
+};
 
 export const updateRole = async (req: Request, res: Response) => {
     const { body } = req;
     const { id } = req.params;
-
     try {
-
-        const role = await roles.findByPk(id);
-
-    if(role) {
-        await role.update(body);
-        res.json({
-            msg: 'El roles fue actualziado con exito'
-        })
-
-    } else {
-        res.status(404).json({
-            msg: `No existe un roles con el id ${id}`
-        })
-    }
-        
+        const updated = await prisma.role.update({
+            where: { id: Number(id) },
+            data: { name: body.name },
+        });
+        res.json({ msg: 'El rol fue actualizado con éxito', role: updated });
     } catch (error) {
-        console.log(error);
-        res.json({
-            msg: `Upps ocurrio un error, comuniquese con soporte`
-        })
+        console.error(error);
+        res.status(500).json({ msg: 'Upps ocurrió un error al actualizar el rol' });
     }
-
-    
-}
+};
 
     

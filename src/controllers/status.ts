@@ -1,66 +1,61 @@
 import { Request, Response } from 'express';
-import statuses from '../models/status';
+import prisma from '../db/prisma';
 
 export const getStatuses = async (req: Request, res: Response) => {
-    const listStatuses = await statuses.findAll()
-    res.json(listStatuses)
-}
+    try {
+        const listStatuses = await prisma.status.findMany({
+            orderBy: { id: 'asc' },
+        });
+        res.json(listStatuses);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Error al obtener estados' });
+    }
+};
+
 export const getStatus = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const status = await statuses.findByPk(id);
-    if (status) {
-        res.json(status)
-    } else {
-        res.status(404).json({
-            msg: `No existe un statuses con el id ${id}`
-        })
+    try {
+        const status = await prisma.status.findUnique({
+            where: { id: Number(id) },
+        });
+        if (status) {
+            res.json(status);
+        } else {
+            res.status(404).json({ msg: `No existe un estado con el id ${id}` });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Error al obtener el estado' });
     }
-}
+};
+
 export const postStatus = async (req: Request, res: Response) => {
     const { body } = req;
-
     try {
-        await statuses.create(body);
-
-        res.json({
-            msg: `El statuses fue agregado con exito!`
-        })
+        const newStatus = await prisma.status.create({
+            data: { name: body.name },
+        });
+        res.status(201).json({ msg: 'El estado fue agregado con éxito!', status: newStatus });
     } catch (error) {
-        console.log(error);
-        res.json({
-            msg: `Upps ocurrio un error, comuniquese con soporte`
-        })
+        console.error(error);
+        res.status(500).json({ msg: 'Upps ocurrió un error al crear el estado' });
     }
-}
+};
 
 export const updateStatus = async (req: Request, res: Response) => {
     const { body } = req;
     const { id } = req.params;
-
     try {
-
-        const status = await statuses.findByPk(id);
-
-    if(status) {
-        await status.update(body);
-        res.json({
-            msg: 'El statuses fue actualziado con exito'
-        })
-
-    } else {
-        res.status(404).json({
-            msg: `No existe un statuses con el id ${id}`
-        })
-    }
-        
+        const updated = await prisma.status.update({
+            where: { id: Number(id) },
+            data: { name: body.name },
+        });
+        res.json({ msg: 'El estado fue actualizado con éxito', status: updated });
     } catch (error) {
-        console.log(error);
-        res.json({
-            msg: `Upps ocurrio un error, comuniquese con soporte`
-        })
+        console.error(error);
+        res.status(500).json({ msg: 'Upps ocurrió un error al actualizar el estado' });
     }
-
-    
-}
+};
 
     
